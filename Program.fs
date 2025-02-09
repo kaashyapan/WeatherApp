@@ -23,19 +23,19 @@ let htmlView' f (ctx: HttpContext) =
 
 let messageView' (ctx: HttpContext) =
     let sse = ctx.GetService<IDatastarServerSentEventService>()
-    let signals = ctx.GetService<IDatastarSignalsReaderService>()
+    let signals' = ctx.GetService<IDatastarSignalsReaderService>()
 
     let sseopts =
         ServerSentEventMergeFragmentsOptions(MergeMode = FragmentMergeMode.Append)
 
     task {
-        let! mySignals = signals.ReadSignalsAsync<HomeSignalNull>()
+        let! signals = signals'.ReadSignalsAsync<HomeSignal | null>()
 
         for i = 1 to Message.Length do
             let html = $"""{Message.Substring(0, Message.Length - i)}""" |> home.msgFragment
             do! (html, sseopts) |> sse.MergeFragmentsAsync
 
-            do! Task.Delay(TimeSpan.FromMilliseconds(mySignals.Delay))
+            do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
         return! ((home.msgFragment "Done"), sseopts) |> sse.MergeFragmentsAsync
     }
@@ -44,16 +44,16 @@ let messageView' (ctx: HttpContext) =
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
     let sse = ctx.GetService<IDatastarServerSentEventService>()
-    let signals = ctx.GetService<IDatastarSignalsReaderService>()
+    let signals' = ctx.GetService<IDatastarSignalsReaderService>()
 
 
     task {
-        let! mySignals = signals.ReadSignalsAsync<CounterSignalNull>()
+        let! signals = signals'.ReadSignalsAsync<CounterSignal | null>()
 
         let counter =
             match action with
-            | Incr -> mySignals.Count + 1
-            | Decr -> mySignals.Count - 1
+            | Incr -> signals.Count + 1
+            | Decr -> signals.Count - 1
 
         return!
             { CounterSignal.Count = counter }
@@ -115,7 +115,7 @@ let configureApp (appBuilder: WebApplication) =
     |> ignore
 
 let configureServices (services: IServiceCollection) =
-    let options =
+    let jsonOptions =
         JsonFSharpOptions
             .Default()
             .WithSkippableOptionFields(SkippableOptionFields.Always, deserializeNullAsNone = true)
@@ -127,6 +127,7 @@ let configureServices (services: IServiceCollection) =
         .AddDatastar()
         .AddAntiforgery()
         .AddOxpecker()
+        .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
     |> ignore
 
 
