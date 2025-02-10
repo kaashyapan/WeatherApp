@@ -6,12 +6,10 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Oxpecker
-open Oxpecker.ViewEngine
 open WeatherApp.templates
 open WeatherApp.Models
 open WeatherApp.templates.shared
 open StarFederation.Datastar
-open StarFederation.Datastar.DependencyInjection
 open System.Text.Json
 open System.Text.Json.Serialization
 
@@ -22,33 +20,40 @@ let htmlView' f (ctx: HttpContext) =
     f ctx |> layout.html ctx |> ctx.WriteHtmlView
 
 let messageView' (ctx: HttpContext) =
-    let sse = ctx.GetService<IDatastarServerSentEventService>()
-    let signals' = ctx.GetService<IDatastarSignalsReaderService>()
+    let sse = ServerSentEventHttpHandlers (ctx.Response, Seq.empty)
+    let signals' : IReadSignals = SignalsHttpHandlers ctx.Request
 
-    let sseopts =
-        ServerSentEventMergeFragmentsOptions(MergeMode = FragmentMergeMode.Append)
+    let sseopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
 
     task {
-        let! signals = signals'.ReadSignalsAsync<HomeSignal | null>()
+        let! signalsVopt = signals'.ReadSignals()
+        let signals =
+            match signalsVopt with
+            | ValueSome signals -> JsonSerializer.Deserialize<HomeSignal>(signals)
+            | ValueNone -> failwith "Unable to deserialize"
 
         for i = 1 to Message.Length do
             let html = $"""{Message.Substring(0, Message.Length - i)}""" |> home.msgFragment
-            do! (html, sseopts) |> sse.MergeFragmentsAsync
+            do! html |> ServerSentEventGenerator.mergeFragmentsWithOptions sseopts sse
 
             do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
-        return! ((home.msgFragment "Done"), sseopts) |> sse.MergeFragmentsAsync
+        return! (home.msgFragment "Done") |> ServerSentEventGenerator.mergeFragmentsWithOptions sseopts sse
     }
     :> Task
 
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
-    let sse = ctx.GetService<IDatastarServerSentEventService>()
-    let signals' = ctx.GetService<IDatastarSignalsReaderService>()
 
+    let sse = ServerSentEventHttpHandlers (ctx.Response, Seq.empty)
+    let signals' : IReadSignals = SignalsHttpHandlers ctx.Request
 
     task {
-        let! signals = signals'.ReadSignalsAsync<CounterSignal | null>()
+        let! signalsVopt = signals'.ReadSignals()
+        let signals =
+            match signalsVopt with
+            | ValueSome signals -> JsonSerializer.Deserialize<CounterSignal>(signals)
+            | ValueNone -> failwith "Unable to deserialize"
 
         let counter =
             match action with
@@ -58,13 +63,13 @@ let counterView' (action: CounterAction) (ctx: HttpContext) =
         return!
             { CounterSignal.Count = counter }
             |> JsonSerializer.Serialize
-            |> sse.MergeSignalsAsync
+            |> ServerSentEventGenerator.mergeSignals sse
     }
     :> Task
 
 
 let weatherView' (ctx: HttpContext) =
-    let sse = ctx.GetService<IDatastarServerSentEventService>()
+    let sse = ServerSentEventHttpHandlers (ctx.Response, Seq.empty)
 
     task {
         // Simulate asynchronous loading to demonstrate long rendering
@@ -90,7 +95,7 @@ let weatherView' (ctx: HttpContext) =
                      TemperatureC = Random.Shared.Next(-20, 55)
                      Summary = summaries[Random.Shared.Next(summaries.Length)] } |]
 
-        return! forecasts |> weather.data |> sse.MergeFragmentsAsync
+        return! forecasts |> weather.data |> ServerSentEventGenerator.mergeFragments sse
     }
     :> Task
 
@@ -124,7 +129,6 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddLogging(fun builder -> builder.AddFilter("Microsoft.AspNetCore", LogLevel.Warning) |> ignore)
-        .AddDatastar()
         .AddAntiforgery()
         .AddOxpecker()
         .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
