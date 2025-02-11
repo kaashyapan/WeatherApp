@@ -5,7 +5,6 @@ open Oxpecker.ViewEngine
 
 let msgFragment (message: string) =
     Fragment() { div (id = "remote-text") { p (class' = "") { message } } }
-    |> Oxpecker.ViewEngine.Render.toString
 
 let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Home"

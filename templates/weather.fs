@@ -29,7 +29,6 @@ let data (forecasts: WeatherForecast[]) =
             }
         }
     }
-    |> Oxpecker.ViewEngine.Render.toString
 
 let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Weather"

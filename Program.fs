@@ -12,64 +12,61 @@ open WeatherApp.templates.shared
 open StarFederation.Datastar
 open System.Text.Json
 open System.Text.Json.Serialization
+open DataStarExtensions
 
 [<Literal>]
 let Message = "Hello world "
+
+let jsonOptions =
+    JsonFSharpOptions
+        .Default()
+        .WithUnionUnwrapFieldlessTags()
+        .WithSkippableOptionFields(SkippableOptionFields.Always, deserializeNullAsNone = true)
+        .ToJsonSerializerOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)
 
 let htmlView' f (ctx: HttpContext) =
     f ctx |> layout.html ctx |> ctx.WriteHtmlView
 
 let messageView' (ctx: HttpContext) =
-    let sse = ServerSentEventHttpHandlers (ctx.Response, Seq.empty)
-    let signals' : IReadSignals = SignalsHttpHandlers ctx.Request
+    let datastar = Datastar(ctx)
 
-    let sseopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
+    let htmlopts =
+        { MergeFragmentsOptions.defaults with
+            MergeMode = Append }
 
     task {
-        let! signalsVopt = signals'.ReadSignals()
-        let signals =
-            match signalsVopt with
-            | ValueSome signals -> JsonSerializer.Deserialize<HomeSignal>(signals)
-            | ValueNone -> failwith "Unable to deserialize"
+        let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
 
         for i = 1 to Message.Length do
             let html = $"""{Message.Substring(0, Message.Length - i)}""" |> home.msgFragment
-            do! html |> ServerSentEventGenerator.mergeFragmentsWithOptions sseopts sse
-
+            do! datastar.WriteHtmlFragment(html, htmlopts)
             do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
-        return! (home.msgFragment "Done") |> ServerSentEventGenerator.mergeFragmentsWithOptions sseopts sse
+        return! datastar.WriteHtmlFragment(home.msgFragment "Done", htmlopts)
     }
     :> Task
 
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
 
-    let sse = ServerSentEventHttpHandlers (ctx.Response, Seq.empty)
-    let signals' : IReadSignals = SignalsHttpHandlers ctx.Request
+    let datastar = Datastar(ctx)
 
     task {
-        let! signalsVopt = signals'.ReadSignals()
-        let signals =
-            match signalsVopt with
-            | ValueSome signals -> JsonSerializer.Deserialize<CounterSignal>(signals)
-            | ValueNone -> failwith "Unable to deserialize"
+        let! signals = datastar.Signals.ReadSignalsOrFail<CounterSignal>(jsonOptions)
 
         let counter =
             match action with
             | Incr -> signals.Count + 1
             | Decr -> signals.Count - 1
 
-        return!
-            { CounterSignal.Count = counter }
-            |> JsonSerializer.Serialize
-            |> ServerSentEventGenerator.mergeSignals sse
+        return! { CounterSignal.Count = counter } |> datastar.MergeSignal
     }
     :> Task
 
 
 let weatherView' (ctx: HttpContext) =
-    let sse = ServerSentEventHttpHandlers (ctx.Response, Seq.empty)
+
+    let datastar = Datastar(ctx)
 
     task {
         // Simulate asynchronous loading to demonstrate long rendering
@@ -95,7 +92,7 @@ let weatherView' (ctx: HttpContext) =
                      TemperatureC = Random.Shared.Next(-20, 55)
                      Summary = summaries[Random.Shared.Next(summaries.Length)] } |]
 
-        return! forecasts |> weather.data |> ServerSentEventGenerator.mergeFragments sse
+        return! forecasts |> weather.data |> datastar.WriteHtmlFragment
     }
     :> Task
 
@@ -120,11 +117,6 @@ let configureApp (appBuilder: WebApplication) =
     |> ignore
 
 let configureServices (services: IServiceCollection) =
-    let jsonOptions =
-        JsonFSharpOptions
-            .Default()
-            .WithSkippableOptionFields(SkippableOptionFields.Always, deserializeNullAsNone = true)
-            .ToJsonSerializerOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)
 
     services
         .AddRouting()
