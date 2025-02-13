@@ -8,29 +8,6 @@ open StarFederation.Datastar
 open System.Text.Json
 
 type SignalsHttpHandlers with
-    /// <summary>
-    /// Read the client signals from the query string as a Json string and Deserialize
-    /// </summary>
-    /// <returns>Returns an instance of `ValueTask<voption<'T>>`.</returns>
-    [<Extension>]
-    member this.ReadSignals<'T>(jsonSerializerOptions: JsonSerializerOptions) =
-        let readTask =
-            task {
-                let! signals = (this :> IReadSignals).ReadSignals()
-
-                let ret =
-                    match signals with
-                    | ValueNone -> ValueNone
-                    | ValueSome rs ->
-                        try
-                            ValueSome(JsonSerializer.Deserialize<'T>(rs, jsonSerializerOptions))
-                        with ex ->
-                            failwithf "Error deserializing Json - %s" ex.Message
-
-                return ret
-            }
-
-        readTask |> ValueTask<'T voption>
 
     /// <summary>
     /// Read the client signals from the query string as a Json string and Deserialize
@@ -39,7 +16,7 @@ type SignalsHttpHandlers with
     [<Extension>]
     member this.ReadSignalsOrFail<'T>(jsonSerializerOptions: JsonSerializerOptions) : Task<'T> =
         task {
-            let! signalsVopt = this.ReadSignals<'T>(jsonSerializerOptions)
+            let! signalsVopt = (this :> IReadSignals).ReadSignals<'T>(jsonSerializerOptions)
 
             let signals =
                 match signalsVopt with
@@ -50,7 +27,9 @@ type SignalsHttpHandlers with
         }
 
 type Datastar(ctx: HttpContext) =
-    let _sse = ServerSentEventHttpHandlers(ctx.Response, Seq.empty)
+    let _sse = ServerSentEventHttpHandlers ctx.Response
+    do
+        _sse.StartResponse() |> ignore
 
     member this.Signals = SignalsHttpHandlers ctx.Request
 
