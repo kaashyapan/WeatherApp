@@ -9,6 +9,7 @@
     <ItemGroup>
         <Compile Include="Models.fs" />
         <Compile Include="DatastarHelpers.fs" />
+        <Compile Include="DatastarAttrs.fs" />
         <Compile Include="templates\shared\layout.fs" />
         <Compile Include="templates\home.fs" />
         <Compile Include="templates\counter.fs" />
@@ -21,7 +22,7 @@
     <ItemGroup>
         <PackageReference Include="Oxpecker" Version="1.1.2" />
         <PackageReference Include="Oxpecker.ViewEngine" Version="1.0.1" />
-        <PackageReference Include="StarFederation.Datastar" Version="1.0.0-beta.2" />
+        <PackageReference Include="StarFederation.Datastar" Version="1.0.0-beta.3" />
         <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
     </ItemGroup>
 
