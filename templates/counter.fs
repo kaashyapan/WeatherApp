@@ -3,6 +3,7 @@ module WeatherApp.templates.counter
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
+open Oxpecker.Datastar
 
 let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Counter"
@@ -16,9 +17,9 @@ let html (ctx: HttpContext) =
 
             div(class' = "col col-lg-3 p-2 m-5").data ("signals-counter", "0") {
                 div (class' = "d-flex justify-content-center gap-3") {
-                    button(class' = "btn btn-primary").data ("on-click", "@get('/counter/decr')") { @"-" }
+                    button (class' = "btn btn-primary", dsOnClick = Get "/counter/decr") { @"-" }
                     p(id = "count", class' = "display-4").data ("text", "$counter")
-                    button(class' = "btn btn-primary").data ("on-click", "@get('/counter/incr')") { @"+" }
+                    button (class' = "btn btn-primary", dsOnClick = Get "/counter/incr") { @"+" }
                 }
 
             }
