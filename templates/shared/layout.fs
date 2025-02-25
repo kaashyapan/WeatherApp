@@ -114,14 +114,15 @@ module layout =
                 meta (name = "viewport", content = "width=device-width, initial-scale=1.0")
                 base' (href = "/")
                 link (rel = "icon", type' = "image/png", href = "/favicon.png")
-                // script (src = "https://unpkg.com/@tailwindcss/browser@4")
                 link (rel = "stylesheet", href = "/app.min.css")
 
                 script (
                     type' = "module",
-                    src = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.3/bundles/datastar.js",
+                    src = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js",
                     crossorigin = "anonymous"
                 )
+
+                script (src = "/app.js")
             }
 
             body () { mainLayout ctx content }

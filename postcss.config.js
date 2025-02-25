@@ -1,8 +1,7 @@
-console.log(process.env.ENV)
-module.exports = (ctx) => ({
+export default (ctx)  => ({
   plugins: {
        'postcss-import': {},
-       cssnano: process.env.ENV === 'prod' ? {} : false,
+       cssnano: process.env.NODE_ENV === 'production' ? {} : false,
        "@tailwindcss/postcss": {},
        autoprefixer: {},
   },

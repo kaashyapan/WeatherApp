@@ -2,10 +2,15 @@
   "name": "WeatherApp",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "ENV=prod pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css",
-    "watch": "pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css --watch"
+    "build:css": "NODE_ENV=production pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css",
+    "build:js": "NODE_ENV=production rolldown -c",
+    "watch:css": "NODE_ENV=development pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css --watch",
+    "watch:js": "NODE_ENV=development rolldown -c -w",
+    "watch": "concurrently \"pnpm run-script watch:css\" \"pnpm run-script watch:js\" ",
+    "build": "concurrently \"pnpm run-script build:css\" \"pnpm run-script build:js\" "
   },
   "keywords": [],
   "author": "",
@@ -15,10 +20,12 @@
     "@tailwindcss/postcss": "^4.0.8",
     "@tailwindcss/typography": "^0.5.16",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
     "cssnano": "^7.0.6",
     "postcss": "^8.5.3",
     "postcss-cli": "^11.0.0",
     "postcss-import": "^16.1.0",
+    "rolldown": "1.0.0-beta.3",
     "tailwindcss": "^4.0.8"
   }
 }

@@ -28,7 +28,7 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
 
                     input (
                         class' =
-                            "form-input w-full rounded-full p-2 outline-none border border-gray-100 shadow placeholder-gray-300 focus:ring focus:ring-orange-200 transition duration-200 mb-4",
+                            "form-input w-full rounded-full p-4 outline-none border border-gray-100 shadow placeholder-gray-300 focus:ring focus:ring-orange-200 transition duration-200 mb-4",
                         id = "textInput1",
                         value = r.Email,
                         type' = "email",
@@ -38,7 +38,7 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
                     )
 
                     match r.EmailError with
-                    | Some err -> p (class' = "block ml-4 text-red-800 text-xs text-left") { err }
+                    | Some err -> p (class' = "form-error block ml-4 text-red-800 text-xs text-left") { err }
                     | None -> Fragment()
                 }
 
@@ -47,7 +47,7 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
 
                     input (
                         class' =
-                            "form-input w-full rounded-full p-2 outline-none border border-gray-100 shadow placeholder-gray-300 focus:ring focus:ring-orange-200 transition duration-200 mb-4",
+                            "form-input w-full rounded-full p-4 outline-none border border-gray-100 shadow placeholder-gray-300 focus:ring focus:ring-orange-200 transition duration-200 mb-4",
                         id = "textInput2",
                         value = r.Password,
                         type' = "password",
@@ -57,7 +57,7 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
                     )
 
                     match r.PasswordError with
-                    | Some err -> div (class' = "block ml-4 text-red-800 text-xs text-left") { err }
+                    | Some err -> div (class' = "form-error block ml-4 text-red-800 text-xs text-left") { err }
                     | None -> Fragment()
                 }
 
@@ -70,10 +70,10 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
                     }
                 }
 
-                div (class' = "grid grid-cols-4 justify-end") {
+                div (class' = "grid grid-cols-4 gap-8 justify-end") {
                     button (
                         class' =
-                            "col-start-3 h-14 inline-flex items-center justify-center py-4 px-6 text-white font-bold font-heading rounded-full bg-orange-500 w-1/2 text-center border border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200 mb-8",
+                            "col-start-2 h-10 inline-flex items-center justify-center py-2 px-4 text-white font-bold font-heading rounded-full bg-orange-500 text-center border border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200 mb-8",
                         type' = "submit"
                     ) {
                         @"Login"
@@ -81,18 +81,15 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
 
                     button(
                         class' =
-                            "h-14 inline-flex items-center justify-center py-4 px-6 text-white font-bold font-heading rounded-full bg-red-500 w-1/2 text-center border border-red-600 shadow hover:bg-red-600 focus:ring focus:ring-red-200 transition duration-200 mb-8"
+                            "h-10 inline-flex items-center justify-center py-2 px-4 text-white font-bold font-heading rounded-full bg-red-500 text-center border border-red-600 shadow hover:bg-red-600 focus:ring focus:ring-red-200 transition duration-200 mb-8"
                     )
-                        .data (
-                            "on-click__prevent",
-                            "console.log('Hello'); document.getElementById('login-form-id').reset()"
-                        ) {
+                        .data ("on-click__prevent", "resetForm('login-form-id')") {
                         @"Clear"
                     }
                 }
 
                 match r.FormError with
-                | Some err -> p (class' = "block pb-2 text-red-800 text-xs text-center") { err }
+                | Some err -> p (class' = "form-error block pb-2 text-red-800 text-xs text-center") { err }
                 | None -> div ()
             }
 
