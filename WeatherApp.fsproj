@@ -12,6 +12,7 @@
         <Compile Include="DatastarAttrs.fs" />
         <Compile Include="templates\shared\layout.fs" />
         <Compile Include="templates\home.fs" />
+        <Compile Include="templates\login.fs" />
         <Compile Include="templates\counter.fs" />
         <Compile Include="templates\weather.fs" />
         <Compile Include="templates\error.fs" />

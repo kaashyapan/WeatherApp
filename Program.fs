@@ -1,4 +1,5 @@
 ﻿open System
+open System.IO
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -17,6 +18,15 @@ open DataStarExtensions
 [<Literal>]
 let Message = "Hello world "
 
+let printCtx (ctx: HttpContext) =
+    ctx.Request.Headers
+    |> Seq.map (fun x -> printfn "Headers %A - %A" x.Key x.Value)
+    |> Seq.toList
+    |> ignore
+
+    ctx.GetRequestUrl() |> printfn "Url - %A"
+    printfn "Secret cookie - %A" (ctx.TryGetCookieValue("secret"))
+
 let jsonOptions =
     JsonFSharpOptions
         .Default()
@@ -24,15 +34,12 @@ let jsonOptions =
         .WithSkippableOptionFields(SkippableOptionFields.Always, deserializeNullAsNone = true)
         .ToJsonSerializerOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)
 
-let htmlView' f (ctx: HttpContext) =
-    f ctx |> layout.html ctx |> ctx.WriteHtmlView
+let htmlView' f (ctx: HttpContext) = f ctx |> layout.html ctx |> ctx.WriteHtmlView
 
 let messageView' (ctx: HttpContext) =
     let datastar = Datastar(ctx)
 
-    let htmlopts =
-        { MergeFragmentsOptions.defaults with
-            MergeMode = Append }
+    let htmlopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
 
     task {
         let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
@@ -45,7 +52,6 @@ let messageView' (ctx: HttpContext) =
         return! datastar.WriteHtmlFragment(home.msgFragment "Done", htmlopts)
     }
     :> Task
-
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
 
@@ -63,6 +69,46 @@ let counterView' (action: CounterAction) (ctx: HttpContext) =
     }
     :> Task
 
+let loginView' (ctx: HttpContext) =
+
+    let datastar = Datastar(ctx)
+
+    task {
+        let! r = ctx.BindForm<LoginForm>()
+        // ctx |> printCtx
+        // let ms = new MemoryStream()
+        // ctx.Request.EnableBuffering()
+        // do! ctx.Request.Body.CopyToAsync(ms)
+        // ms.ToArray() |> System.Text.Encoding.UTF8.GetString |> printfn "Body - %A"
+        // let! form = ctx.Request.ReadFormAsync()
+        // form.Keys |> Seq.map (fun x -> printfn "%A" x) |> Seq.toList |> ignore
+        let validateEmail (r: LoginForm) =
+            if r.Email.ToLower().Contains("gmail") then
+                r
+            else
+                { r with EmailError = Some "Email does not exist. Try a gmail address" }
+
+        let validatePassword (r: LoginForm) =
+            if r.Password.Length <= 6 then
+                { r with PasswordError = Some "Password is too small. Minimum 6 chars" }
+            else
+                r
+
+        let _r =
+            { r with FormError = None; PasswordError = None; EmailError = None }
+            |> validateEmail
+            |> validatePassword
+
+        printfn "%A" _r
+
+        if (_r.EmailError.IsNone && _r.FormError.IsNone && _r.PasswordError.IsNone) then
+            return! ctx |> login.ok |> datastar.WriteHtmlFragment
+        else
+            let r' = { _r with FormError = Some "Please fix form errors" }
+            printfn "%A" r'
+            return! ctx |> login.showForm r' |> datastar.WriteHtmlFragment
+    }
+    :> Task
 
 let weatherView' (ctx: HttpContext) =
 
@@ -75,37 +121,56 @@ let weatherView' (ctx: HttpContext) =
         let startDate = DateOnly.FromDateTime(DateTime.Now)
 
         let summaries =
-            [ "Freezing"
-              "Bracing"
-              "Chilly"
-              "Cool"
-              "Mild"
-              "Warm"
-              "Balmy"
-              "Hot"
-              "Sweltering"
-              "Scorching" ]
+            [
+                "Freezing"
+                "Bracing"
+                "Chilly"
+                "Cool"
+                "Mild"
+                "Warm"
+                "Balmy"
+                "Hot"
+                "Sweltering"
+                "Scorching"
+            ]
 
         let forecasts =
-            [| for index in 1..5 do
-                   { Date = startDate.AddDays(index)
-                     TemperatureC = Random.Shared.Next(-20, 55)
-                     Summary = summaries[Random.Shared.Next(summaries.Length)] } |]
+            [|
+                for index in 1..5 do
+                    {
+                        Date = startDate.AddDays(index)
+                        TemperatureC = Random.Shared.Next(-20, 55)
+                        Summary = summaries[Random.Shared.Next(summaries.Length)]
+                    }
+            |]
 
         return! forecasts |> weather.data |> datastar.WriteHtmlFragment
     }
     :> Task
 
 let endpoints =
-    [ GET
-          [ route "/" <| htmlView' home.html
-            route "/messages" <| messageView'
-            route "/counter" <| htmlView' counter.html
-            route "/counter/incr" <| counterView' Incr
-            route "/counter/decr" <| counterView' Decr
-            route "/weather" <| htmlView' weather.html
-            route "/weather/data" <| weatherView'
-            route "/error" <| htmlView' error.html ] ]
+    [
+        GET
+            [
+                route "/" <| htmlView' home.html
+                route "/messages" <| messageView'
+                route "/error" <| htmlView' error.html
+            ]
+        subRoute
+            "/counter"
+            [
+                GET [ route "" <| htmlView' counter.html ]
+                POST [ route "/incr" <| counterView' Incr; route "/decr" <| counterView' Decr ]
+            ]
+        subRoute
+            "/login"
+            [
+                GET [ route "" <| htmlView' (login.html LoginForm.make) ]
+                POST [ route "" <| loginView' ]
+
+            ]
+        subRoute "/weather" [ GET [ route "" <| htmlView' weather.html ]; GET [ route "/data" <| weatherView' ] ]
+    ]
 
 let configureApp (appBuilder: WebApplication) =
     if appBuilder.Environment.IsDevelopment() then
@@ -125,7 +190,6 @@ let configureServices (services: IServiceCollection) =
         .AddOxpecker()
         .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
     |> ignore
-
 
 [<EntryPoint>]
 let main args =

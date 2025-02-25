@@ -9,19 +9,36 @@ let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Counter"
 
     Fragment() {
-        div (class' = "") {
-            div (class' = "p-2") {
-                h1 () { "Datastar Counter Demo" }
-                p () { "Demonstrates counter as a signal" }
+        div (class' = "p-2") {
+            div (class' = "mb-10") {
+                h1 (class' = "text-5xl font-bold font-heading mb-6 max-w-2xl") { @"Datastar Counter Demo" }
+                p (class' = "text-lg mb-2 max-w-xl") { "Demonstrates counter as a signal" }
+                hr (class' = "border-gray-200")
             }
 
-            div(class' = "col col-lg-3 p-2 m-5").data ("signals-counter", "0") {
-                div (class' = "d-flex justify-content-center gap-3") {
-                    button (class' = "btn btn-primary", dsOnClick = Get "/counter/decr") { @"-" }
-                    p(id = "count", class' = "display-4").data ("text", "$counter")
-                    button (class' = "btn btn-primary", dsOnClick = Get "/counter/incr") { @"+" }
+            div(class' = "w-3/4 lg:w-1/2 grid h-56 grid-cols-3 items-center place-items-center")
+                .data ("signals-counter", "0") {
+                div (class' = "w-14") {
+                    button (
+                        class' =
+                            "h-14 items-center justify-center text-white font-bold fond-heading bg-orange-500 w-full text-center border rounded-full border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200",
+                        dsOnClick = Post "/counter/decr"
+                    ) {
+                        @"-"
+                    }
                 }
 
+                div (class' = "self-center") { p(class' = "text-5xl").data ("text", "$counter") }
+
+                div (class' = "w-14") {
+                    button (
+                        class' =
+                            "h-14 items-center justify-center text-white font-bold fond-heading bg-orange-500 w-full text-center border rounded-full border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200",
+                        dsOnClick = Post "/counter/incr"
+                    ) {
+                        @"+"
+                    }
+                }
             }
         }
     }
