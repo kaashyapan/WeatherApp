@@ -1,5 +1,6 @@
 ﻿open System
 open System.IO
+open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -14,6 +15,8 @@ open StarFederation.Datastar
 open System.Text.Json
 open System.Text.Json.Serialization
 open DataStarExtensions
+open System.IO.Compression
+open Microsoft.AspNetCore.ResponseCompression
 
 [<Literal>]
 let Message = "Hello world "
@@ -178,7 +181,7 @@ let configureApp (appBuilder: WebApplication) =
     else
         appBuilder.UseExceptionHandler("/error", true) |> ignore
 
-    appBuilder.UseStaticFiles().UseAntiforgery().UseRouting().UseOxpecker(endpoints)
+    appBuilder.UseResponseCompression().UseStaticFiles().UseAntiforgery().UseRouting().UseOxpecker(endpoints)
     |> ignore
 
 let configureServices (services: IServiceCollection) =
@@ -189,6 +192,32 @@ let configureServices (services: IServiceCollection) =
         .AddAntiforgery()
         .AddOxpecker()
         .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
+        .AddResponseCompression(fun opts ->
+            opts.EnableForHttps <- true
+
+            opts.MimeTypes <-
+                ResponseCompressionDefaults.MimeTypes
+                |> Seq.append (
+                    seq {
+                        "image/svg+xml"
+                        "text/event-stream"
+                    }
+                )
+
+            opts.Providers.Add<BrotliCompressionProvider>()
+            opts.Providers.Add<GzipCompressionProvider>()
+        )
+
+    |> ignore
+
+    services.Configure<BrotliCompressionProviderOptions>(fun (opts: BrotliCompressionProviderOptions) ->
+        opts.Level <- CompressionLevel.Fastest
+    )
+    |> ignore
+
+    services.Configure<GzipCompressionProviderOptions>(fun (opts: GzipCompressionProviderOptions) ->
+        opts.Level <- CompressionLevel.SmallestSize
+    )
     |> ignore
 
 [<EntryPoint>]

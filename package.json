@@ -6,9 +6,9 @@
   "main": "index.js",
   "scripts": {
     "build:css": "NODE_ENV=production pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css",
-    "build:js": "NODE_ENV=production rolldown -c",
+    "build:js": "NODE_ENV=production rolldown -c rolldown.config.js",
     "watch:css": "NODE_ENV=development pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css --watch",
-    "watch:js": "NODE_ENV=development rolldown -c -w",
+    "watch:js": "NODE_ENV=development rolldown -c rolldown.config.js -w",
     "watch": "concurrently \"pnpm run-script watch:css\" \"pnpm run-script watch:js\" ",
     "build": "concurrently \"pnpm run-script build:css\" \"pnpm run-script build:js\" "
   },

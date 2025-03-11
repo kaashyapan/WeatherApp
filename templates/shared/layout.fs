@@ -122,7 +122,7 @@ module layout =
                     crossorigin = "anonymous"
                 )
 
-                script (src = "/app.js")
+                script (src = "/app.min.js")
             }
 
             body () { mainLayout ctx content }
