@@ -6,7 +6,8 @@ open Oxpecker.ViewEngine.Aria
 open Oxpecker.Datastar
 open WeatherApp.Models
 
-let ok (ctx: HttpContext) = Fragment() { div (id = "login-form") { p () { @"Login successful" } } }
+let ok (ctx: HttpContext) =
+    Fragment() { div (id = "login-form", class' = "w-full") { p (class' = "mx-auto w-32") { @"Login successful" } } }
 
 let showForm (r: LoginForm) (ctx: HttpContext) =
     let passwdError = r.PasswordError |> Option.defaultValue ""
