@@ -1,22 +1,22 @@
 ﻿open System
-open System.IO
-open System.Collections.Generic
+open System.IO.Compression
+open System.Text.Json.Serialization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.ResponseCompression
+open Microsoft.AspNetCore.Routing
+open Microsoft.AspNetCore.Routing.Internal
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Oxpecker
+open Frank.Builder
 open WeatherApp.templates
+open WeatherApp.Extensions
 open WeatherApp.Models
 open WeatherApp.templates.shared
 open StarFederation.Datastar
-open System.Text.Json
-open System.Text.Json.Serialization
 open DataStarExtensions
-open System.IO.Compression
-open Microsoft.AspNetCore.ResponseCompression
 
 [<Literal>]
 let Message = "Hello world "
@@ -151,38 +151,70 @@ let weatherView' (ctx: HttpContext) =
     }
     :> Task
 
-let endpoints =
-    [
-        GET
-            [
-                route "/" <| htmlView' home.html
-                route "/messages" <| messageView'
-                route "/error" <| htmlView' error.html
-            ]
-        subRoute
-            "/counter"
-            [
-                GET [ route "" <| htmlView' counter.html ]
-                POST [ route "/incr" <| counterView' Incr; route "/decr" <| counterView' Decr ]
-            ]
-        subRoute
-            "/login"
-            [
-                GET [ route "" <| htmlView' (login.html LoginForm.make) ]
-                POST [ route "" <| loginView' ]
+let home =
+    resource "/" {
+        name "Home"
+        get (htmlView' home.html)
+    }
 
-            ]
-        subRoute "/weather" [ GET [ route "" <| htmlView' weather.html ]; GET [ route "/data" <| weatherView' ] ]
-    ]
+let messages =
+    resource "messages" {
+        name "Messages"
+        get messageView'
+    }
 
-let configureApp (appBuilder: WebApplication) =
-    if appBuilder.Environment.IsDevelopment() then
-        appBuilder.UseDeveloperExceptionPage() |> ignore
-    else
-        appBuilder.UseExceptionHandler("/error", true) |> ignore
+let errorPage =
+    resource "error" {
+        name "Error"
+        get (htmlView' error.html)
+    }
 
-    appBuilder.UseResponseCompression().UseStaticFiles().UseAntiforgery().UseRouting().UseOxpecker(endpoints)
-    |> ignore
+let counter =
+    resource "counter/{action:regex(^(incr|decr)$)?}" {
+        name "Counter"
+        get (htmlView' counter.html)
+
+        post (fun (ctx: HttpContext) ->
+            match ctx.TryGetRouteValue("action") with
+            | Some "incr" -> counterView' Incr ctx
+            | Some "decr" -> counterView' Decr ctx
+            | _ -> htmlView' error.html ctx
+        )
+    }
+
+let login =
+    resource "/login" {
+        name "Login"
+        get (htmlView' (login.html LoginForm.make))
+        post loginView'
+    }
+
+let weather =
+    resource "/weather" {
+        name "Weather"
+        get (htmlView' weather.html)
+    }
+
+let weatherData =
+    resource "/weather/data" {
+        name "Weather Data"
+        get weatherView'
+    }
+
+let graph =
+    resource "graph" {
+        name "Graph"
+
+        get (fun (ctx: HttpContext) ->
+            let graphWriter = ctx.RequestServices.GetRequiredService<DfaGraphWriter>()
+
+            let endpointDataSource = ctx.RequestServices.GetRequiredService<EndpointDataSource>()
+
+            use sw = new IO.StringWriter()
+            graphWriter.Write(endpointDataSource, sw)
+            ctx.Response.WriteAsync(sw.ToString())
+        )
+    }
 
 let configureServices (services: IServiceCollection) =
 
@@ -220,11 +252,29 @@ let configureServices (services: IServiceCollection) =
     )
     |> ignore
 
+    services
+
 [<EntryPoint>]
 let main args =
-    let builder = WebApplication.CreateBuilder(args)
-    configureServices builder.Services
-    let app = builder.Build()
-    configureApp app
-    app.Run()
+    webHost args {
+        useDefaults
+
+        service configureServices
+
+        plugWhen isDevelopment DeveloperExceptionPageExtensions.UseDeveloperExceptionPage
+        plugWhenNot isDevelopment (fun app -> ExceptionHandlerExtensions.UseExceptionHandler(app, "/error", true))
+
+        plug ResponseCompressionBuilderExtensions.UseResponseCompression
+        plug StaticFileExtensions.UseStaticFiles
+        plug AntiforgeryApplicationBuilderExtensions.UseAntiforgery
+
+        resource home
+        resource messages
+        resource counter
+        resource login
+        resource weather
+        resource weatherData
+        resource graph
+    }
+
     0

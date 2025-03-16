@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Extensions.fs" />
         <Compile Include="Models.fs" />
         <Compile Include="DatastarHelpers.fs" />
         <Compile Include="DatastarAttrs.fs" />
@@ -21,6 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Frank" Version="6.3.0" />
         <PackageReference Include="Oxpecker" Version="1.1.2" />
         <PackageReference Include="Oxpecker.ViewEngine" Version="1.0.1" />
         <PackageReference Include="StarFederation.Datastar" Version="1.0.0-beta.4" />
