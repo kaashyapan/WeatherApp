@@ -118,7 +118,7 @@ module layout =
 
                 script (
                     type' = "module",
-                    src = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js",
+                    src = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.9/bundles/datastar.js",
                     crossorigin = "anonymous"
                 )
 
