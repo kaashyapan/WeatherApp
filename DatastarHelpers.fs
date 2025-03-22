@@ -28,35 +28,26 @@ type SignalsHttpHandlers with
 
 type Datastar(ctx: HttpContext) =
     let _sse = ServerSentEventHttpHandlers ctx.Response
-    do
-        _sse.StartResponse() |> ignore
+    do _sse.StartResponse() |> ignore
 
     member this.Signals = SignalsHttpHandlers ctx.Request
 
-    member this.WriteHtmlFragment(htmlView) =
-        htmlView
-        |> Oxpecker.ViewEngine.Render.toString
-        |> ServerSentEventGenerator.mergeFragments _sse
+    member this.WriteHtmlFragment(htmlView, ?options) =
+        let fragment = htmlView |> Oxpecker.ViewEngine.Render.toString
+        ServerSentEventGenerator.mergeFragments (_sse, fragment, ?options = options)
 
-    member this.WriteHtmlFragment(htmlView, opts: MergeFragmentsOptions) =
-        htmlView
-        |> Oxpecker.ViewEngine.Render.toString
-        |> ServerSentEventGenerator.mergeFragmentsWithOptions opts _sse
+    member this.RemoveHtmlFragment(selector, ?options) =
+        ServerSentEventGenerator.removeFragments (_sse, selector, ?options = options)
 
-    member this.MergeSignal(_signals) =
-        _signals
-        |> JsonSerializer.Serialize
-        |> ServerSentEventGenerator.mergeSignals _sse
+    member this.MergeSignal(signals, ?options, ?jsonSerializerOptions: JsonSerializerOptions) =
+        let json =
+            match jsonSerializerOptions with
+            | Some opts -> JsonSerializer.Serialize(signals, opts)
+            | None -> JsonSerializer.Serialize(signals)
 
-    member this.MergeSignal(_signals, opts: MergeSignalsOptions) =
-        _signals
-        |> JsonSerializer.Serialize
-        |> ServerSentEventGenerator.mergeSignalsWithOptions opts _sse
+        ServerSentEventGenerator.mergeSignals (_sse, json, ?options = options)
 
-    member this.MergeSignal(_signals, jsonopts: JsonSerializerOptions) =
-        JsonSerializer.Serialize(_signals, jsonopts)
-        |> ServerSentEventGenerator.mergeSignals _sse
+    member this.RemoveSignal(paths, ?options) = ServerSentEventGenerator.removeSignals (_sse, paths, ?options = options)
 
-    member this.MergeSignal(_signals, opts: MergeSignalsOptions, jsonopts: JsonSerializerOptions) =
-        JsonSerializer.Serialize(_signals, jsonopts)
-        |> ServerSentEventGenerator.mergeSignalsWithOptions opts _sse
+    member this.ExecuteScript(script, ?options) =
+        ServerSentEventGenerator.executeScript (_sse, script, ?options = options)
