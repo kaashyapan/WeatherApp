@@ -1,6 +1,4 @@
 ﻿open System
-open System.IO
-open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -12,14 +10,13 @@ open WeatherApp.templates
 open WeatherApp.Models
 open WeatherApp.templates.shared
 open StarFederation.Datastar
-open System.Text.Json
 open System.Text.Json.Serialization
 open DataStarExtensions
 open System.IO.Compression
 open Microsoft.AspNetCore.ResponseCompression
 
 [<Literal>]
-let Message = "Hello world "
+let Message = "Hello world"
 
 let printCtx (ctx: HttpContext) =
     ctx.Request.Headers
@@ -42,13 +39,13 @@ let htmlView' f (ctx: HttpContext) = f ctx |> layout.html ctx |> ctx.WriteHtmlVi
 let messageView' (ctx: HttpContext) =
     let datastar = Datastar(ctx)
 
-    let htmlopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
+    let htmlopts = { MergeFragmentsOptions.defaults with MergeMode = Append; Selector = ValueSome "#remote-text" }
 
     task {
         let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
 
-        for i = 1 to Message.Length do
-            let html = $"""{Message.Substring(0, Message.Length - i)}""" |> home.msgFragment
+        for i = 0 to Message.Length do
+            let html = Message.Substring(0, Message.Length - i) |> home.msgFragment
             do! datastar.WriteHtmlFragment(html, htmlopts)
             do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
