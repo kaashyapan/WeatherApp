@@ -3,7 +3,7 @@ module WeatherApp.templates.home
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
 
-let msgFragment (message: string) = Fragment() { div (id = "remote-text") { p (class' = "") { message } } }
+let msgFragment (message: string) = Fragment() { p (class' = "") { message } }
 
 let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Signals"
