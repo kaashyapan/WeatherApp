@@ -17,9 +17,15 @@ open System.Text.Json.Serialization
 open DataStarExtensions
 open System.IO.Compression
 open Microsoft.AspNetCore.ResponseCompression
+open System.Threading.Channels
 
 [<Literal>]
 let Message = "Hello world "
+
+let channel =
+    Channel.CreateUnbounded<string>(
+        UnboundedChannelOptions(SingleWriter = true, SingleReader = true, AllowSynchronousContinuations = true)
+    )
 
 let printCtx (ctx: HttpContext) =
     ctx.Request.Headers
@@ -43,18 +49,40 @@ let messageView' (ctx: HttpContext) =
     let datastar = Datastar(ctx)
 
     let htmlopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
+    let reader = channel.Reader
+    let writer = channel.Writer
 
-    task {
-        let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
+    let _readTask =
+        task {
+            let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
 
-        for i = 1 to Message.Length do
-            let html = $"""{Message.Substring(0, Message.Length - i)}""" |> home.msgFragment
-            do! datastar.WriteHtmlFragment(html, htmlopts)
-            do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
+            for i = 1 to Message.Length do
+                let str = $"""{Message.Substring(0, Message.Length - i)}"""
+                do! writer.WriteAsync(str)
+                printfn "%A" "Wrote channel"
+                do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
-        return! datastar.WriteHtmlFragment(home.msgFragment "Done", htmlopts)
-    }
-    :> Task
+            return ()
+        }
+        :> Task
+
+    let _writeTask =
+        task {
+            while true do
+                printfn "%A" "Awaiting channel"
+                let! avble = reader.WaitToReadAsync()
+                printfn "%A" "Readinging channel"
+
+                match reader.TryRead() with
+                | true, str ->
+                    let html = str |> home.msgFragment
+                    do! datastar.WriteHtmlFragment(html, htmlopts)
+                | _ -> return! datastar.WriteHtmlFragment("Done" |> home.msgFragment, htmlopts)
+
+        }
+        :> Task
+
+    [| _readTask; _writeTask |] |> Task.WhenAll
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
 
