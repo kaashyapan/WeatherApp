@@ -52,6 +52,7 @@ let messageView' (ctx: HttpContext) =
     let reader = channel.Reader
     let writer = channel.Writer
 
+    //Write async messages into the channel. Returns at the end of the loop
     let _readTask =
         task {
             let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
@@ -66,6 +67,7 @@ let messageView' (ctx: HttpContext) =
         }
         :> Task
 
+    //Read async messages from the channel. Returns when the channel has no more msgs
     let _writeTask =
         task {
             while true do
@@ -82,6 +84,7 @@ let messageView' (ctx: HttpContext) =
         }
         :> Task
 
+    // Return only when both tasks have completed
     [| _readTask; _writeTask |] |> Task.WhenAll
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
