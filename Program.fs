@@ -17,15 +17,15 @@ open System.Text.Json.Serialization
 open DataStarExtensions
 open System.IO.Compression
 open Microsoft.AspNetCore.ResponseCompression
+open System.Threading
+open System.Threading.Tasks
 open System.Threading.Channels
+open IcedTasks
 
 [<Literal>]
-let Message = "Hello world "
+let Message = "Hello world"
 
-let channel =
-    Channel.CreateUnbounded<string>(
-        UnboundedChannelOptions(SingleWriter = true, SingleReader = true, AllowSynchronousContinuations = true)
-    )
+let channel = Channel.CreateBounded<string>(BoundedChannelOptions(10))
 
 let printCtx (ctx: HttpContext) =
     ctx.Request.Headers
@@ -47,45 +47,61 @@ let htmlView' f (ctx: HttpContext) = f ctx |> layout.html ctx |> ctx.WriteHtmlVi
 
 let messageView' (ctx: HttpContext) =
     let datastar = Datastar(ctx)
-
     let htmlopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
     let reader = channel.Reader
     let writer = channel.Writer
 
-    //Write async messages into the channel. Returns at the end of the loop
-    let _readTask =
-        task {
-            let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
+    // Write async messages to the channel after delay
+    let _readTask ctx =
+        cancellableTask {
+            return!
+                // Use lambda to get cancellation token inside cancellableTask
+                fun (ct: CancellationToken) ->
+                    task {
+                        let! signals = datastar.Signals.ReadSignalsOrFail<HomeSignal>(jsonOptions)
+                        let mutable i = 0
 
-            for i = 1 to Message.Length do
-                let str = $"""{Message.Substring(0, Message.Length - i)}"""
-                do! writer.WriteAsync(str)
-                printfn "%A" "Wrote channel"
-                do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
+                        while i < Message.Length && not ct.IsCancellationRequested do
+                            let str = $"""{Message.Substring(0, Message.Length - i)}"""
+                            do! writer.WriteAsync(str)
+                            i <- i + 1
+                            do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
-            return ()
+                        return ()
+                    }
         }
-        :> Task
 
-    //Read async messages from the channel. Returns when the channel has no more msgs
-    let _writeTask =
-        task {
-            while true do
-                printfn "%A" "Awaiting channel"
-                let! avble = reader.WaitToReadAsync()
-                printfn "%A" "Readinging channel"
+    // Read async messages from the channel
+    // Returns when the channel has no more msgs
+    // Writes to html
+    let _writeTask ctx =
+        cancellableTask {
+            return!
+                // Use lambda to get cancellation token inside cancellableTask
+                fun (ct: CancellationToken) ->
+                    task {
+                        let mutable avble = true
 
-                match reader.TryRead() with
-                | true, str ->
-                    let html = str |> home.msgFragment
-                    do! datastar.WriteHtmlFragment(html, htmlopts)
-                | _ -> return! datastar.WriteHtmlFragment("Done" |> home.msgFragment, htmlopts)
+                        while avble && not ct.IsCancellationRequested do
+                            try
+                                let! _avble = reader.WaitToReadAsync(ct)
+                                avble <- _avble
 
+                                match reader.TryRead() with
+                                | true, str ->
+                                    let html = str |> home.msgFragment
+                                    do! datastar.WriteHtmlFragment(html, htmlopts)
+                                | _ -> avble <- false
+                            with ex ->
+                                avble <- false
+
+                    }
         }
-        :> Task
 
     // Return only when both tasks have completed
-    [| _readTask; _writeTask |] |> Task.WhenAll
+    [| _readTask ctx ctx.RequestAborted; _writeTask ctx ctx.RequestAborted |]
+    |> Task.WhenAll
+    :> Task
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
 
