@@ -2,8 +2,9 @@ module WeatherApp.templates.home
 
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
+open Oxpecker.Datastar
 
-let msgFragment (message: string) = Fragment() { div (id = "remote-text") { p (class' = "") { message } } }
+let msgFragment (message: string) = Fragment() { div () { p (class' = "") { message } } }
 
 let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Signals"
@@ -20,28 +21,27 @@ let html (ctx: HttpContext) =
                 hr (class' = "border-gray-200")
             }
 
-            div(class' = "w-3/4 lg:w-1/2").data ("signals-delay", "400") {
+            div (class' = "w-3/4 lg:w-1/2", dsSignals = [ ("delay", "1000") ]) {
                 div (class' = "w-full gap-10 mb-4") {
 
                     label (class' = "block text-nowrap text-md mb-2 font-medium", for' = "delay") { @"Delay in ms" }
 
-                    input(
+                    input (
                         class' =
                             "w-full rounded-full p-4 outline-none border border-gray-100 shadow placeholder-gray-500 focus:ring focus:ring-orange-200 transition duration-200 mb-4",
                         id = "delay",
                         type' = "number",
                         step = "100",
-                        min = "0"
+                        min = "0",
+                        dsBind = "delay"
                     )
-                        .data ("bind", "delay")
-
                 }
 
-                button(
+                button (
                     class' =
-                        "h-14 max-w-32 items-center justify-center py-4 px-6 text-white font-bold font-heading rounded-full bg-orange-500 w-full text-center border border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200 mb-8"
-                )
-                    .data ("on-click", "@get('/messages')") {
+                        "h-14 max-w-32 items-center justify-center py-4 px-6 text-white font-bold font-heading rounded-full bg-orange-500 w-full text-center border border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200 mb-8",
+                    dsOnClick = SseRqst(SseOptions(DsGet, "/messages"))
+                ) {
                     @"Start"
                 }
 

@@ -14,7 +14,7 @@ open WeatherApp.templates.shared
 open StarFederation.Datastar
 open System.Text.Json
 open System.Text.Json.Serialization
-open DataStarExtensions
+open Oxpecker.Datastar
 open System.IO.Compression
 open Microsoft.AspNetCore.ResponseCompression
 open System.Threading
@@ -26,7 +26,10 @@ open type Microsoft.AspNetCore.Http.TypedResults
 [<Literal>]
 let Message = "Hello world"
 
-let channel = Channel.CreateBounded<string>(BoundedChannelOptions(10))
+let channel =
+    Channel.CreateUnbounded<string>(
+        UnboundedChannelOptions(SingleWriter = true, SingleReader = true, AllowSynchronousContinuations = true)
+    )
 
 let printCtx (ctx: HttpContext) =
     ctx.Request.Headers
@@ -48,7 +51,14 @@ let htmlView' f (ctx: HttpContext) = f ctx |> layout.html ctx |> ctx.WriteHtmlVi
 
 let messageView' (ctx: HttpContext) =
     let datastar = Datastar(ctx)
-    let htmlopts = { MergeFragmentsOptions.defaults with MergeMode = Append }
+
+    let htmlopts =
+        { MergeFragmentsOptions.defaults with
+            MergeMode = Append
+            Selector = (ValueSome(Selector "#remote-text"))
+            UseViewTransition = true
+        }
+
     let reader = channel.Reader
     let writer = channel.Writer
 
@@ -68,7 +78,7 @@ let messageView' (ctx: HttpContext) =
                             i <- i + 1
                             do! Task.Delay(TimeSpan.FromMilliseconds(signals.Delay))
 
-                        return ()
+                        return! writer.WriteAsync("Done!")
                     }
         }
 
@@ -101,7 +111,7 @@ let messageView' (ctx: HttpContext) =
 
     // Return only when both tasks have completed
     [| _readTask ctx ctx.RequestAborted; _writeTask ctx ctx.RequestAborted |]
-    |> Task.WhenAll
+    |> Task.WhenAny
     :> Task
 
 let counterView' (action: CounterAction) (ctx: HttpContext) =
@@ -153,11 +163,21 @@ let loginView' (ctx: HttpContext) =
         printfn "%A" _r
 
         if (_r.EmailError.IsNone && _r.FormError.IsNone && _r.PasswordError.IsNone) then
-            return! ctx |> login.ok |> datastar.WriteHtmlFragment
+            return! datastar.ExecuteScript "submitLoginForm(`login-form-id`);"
         else
             let r' = { _r with FormError = Some "Please fix form errors" }
             printfn "%A" r'
             return! ctx |> login.showForm r' |> datastar.WriteHtmlFragment
+    }
+    :> Task
+
+let loginAndRedirect (ctx: HttpContext) =
+    task {
+        let! r = ctx.BindForm<LoginForm>()
+        // Create login Jwt / Cookie
+        printfn "%A" r
+        do! Task.Delay(2000)
+        ctx.Response.Redirect("/", false)
     }
     :> Task
 
@@ -224,8 +244,8 @@ let endpoints =
             "/signin"
             [
                 GET [ route "" <| htmlView' (login.html LoginForm.make) ]
-                POST [ route "" <| loginView' ]
-
+                PATCH [ route "" <| loginView' ]
+                POST [ route "" <| loginAndRedirect ]
             ]
         subRoute "/weather" [ GET [ route "" <| htmlView' weather.html ]; GET [ route "/data" <| weatherView' ] ]
     ]
@@ -260,7 +280,6 @@ let configureServices (services: IServiceCollection) =
                 )
 
             opts.Providers.Add<BrotliCompressionProvider>()
-            opts.Providers.Add<GzipCompressionProvider>()
         )
 
     |> ignore

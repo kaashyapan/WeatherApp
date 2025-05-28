@@ -1,13 +1,13 @@
-import { defineConfig } from 'rolldown'
+import { defineConfig } from "rolldown";
 
 export default defineConfig([
-  {
-    define: { 'process.env.NODE_ENV': "'production'" },
-    input: 'wwwroot/app.js',
-    output: {
-      format: 'es',
-      file: "wwwroot/app.min.js",
-      minify: process.env.NODE_ENV === 'production' ? true : false,
-    },
-  },
-])
+	{
+		// define: { "process.env.NODE_ENV": "'production'" },
+		input: "js/index.js",
+		output: {
+			format: "es",
+			file: "wwwroot/app.min.js",
+			minify: process.env.NODE_ENV === "production" ? true : false,
+		},
+	},
+]);

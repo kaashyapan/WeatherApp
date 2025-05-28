@@ -15,7 +15,11 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
 
     div (id = "login-form", class' = "w-full h-full") {
         div (class' = "w-3/4 lg:w-1/2 mx-auto bg-neutral-50 border border-neutral-50 rounded-xl") {
-            form(id = "login-form-id", class' = "p-4").data ("on-submit", "@post('/signin', {contentType: 'form'})") {
+            form (
+                id = "login-form-id",
+                class' = "p-4",
+                dsOnSubmit = SseRqst(SseOptions(DsPatch, "/signin").WithContentType("form"))
+            ) {
                 h1 (class' = "text-3xl font-bold font-heading mb-4") { @"Signin" }
 
                 a (class' = "flex gap-4 inline-block text-gray-500 hover: transition duration-200 mb-8") {
@@ -80,11 +84,12 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
                         @"Login"
                     }
 
-                    button(
+                    button (
+                        type' = "reset",
                         class' =
-                            "h-10 inline-flex items-center justify-center py-2 px-4 text-white font-bold font-heading rounded-full bg-red-500 text-center border border-red-600 shadow hover:bg-red-600 focus:ring focus:ring-red-200 transition duration-200 mb-8"
-                    )
-                        .data ("on-click__prevent", "resetForm('login-form-id')") {
+                            "h-10 inline-flex items-center justify-center py-2 px-4 text-white font-bold font-heading rounded-full bg-red-500 text-center border border-red-600 shadow hover:bg-red-600 focus:ring focus:ring-red-200 transition duration-200 mb-8",
+                        dsOnClick = DsExec [ SseRqst(SseOptions(DsGet, "/signin")) ]
+                    ) {
                         @"Clear"
                     }
                 }

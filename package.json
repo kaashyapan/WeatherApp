@@ -1,31 +1,32 @@
 {
-  "name": "WeatherApp",
-  "version": "1.0.0",
-  "description": "",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "build:css": "NODE_ENV=production pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css",
-    "build:js": "NODE_ENV=production rolldown -c rolldown.config.js",
-    "watch:css": "NODE_ENV=development pnpx postcss-cli ./wwwroot/app.css -o ./wwwroot/app.min.css --watch",
-    "watch:js": "NODE_ENV=development rolldown -c rolldown.config.js -w",
-    "watch": "concurrently \"pnpm run-script watch:css\" \"pnpm run-script watch:js\" ",
-    "build": "concurrently \"pnpm run-script build:css\" \"pnpm run-script build:js\" "
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/postcss": "^4.0.8",
-    "@tailwindcss/typography": "^0.5.16",
-    "autoprefixer": "^10.4.20",
-    "concurrently": "^9.1.2",
-    "cssnano": "^7.0.6",
-    "postcss": "^8.5.3",
-    "postcss-cli": "^11.0.0",
-    "postcss-import": "^16.1.0",
-    "rolldown": "1.0.0-beta.3",
-    "tailwindcss": "^4.0.8"
-  }
+	"name": "WeatherApp",
+	"version": "1.0.0",
+	"description": "",
+	"type": "module",
+	"main": "index.js",
+	"scripts": {
+		"build:css": "NODE_ENV=production pnpx postcss-cli ./js/app.css -o ./wwwroot/app.min.css",
+		"build:js": "NODE_ENV=production rolldown -c",
+		"watch:css": "NODE_ENV=development pnpx postcss-cli ./js/app.css -o ./wwwroot/app.min.css --watch",
+		"watch:js": "NODE_ENV=development rolldown -w -c",
+		"watch": "concurrently \"pnpm run-script watch:css\" \"pnpm run-script watch:js\" ",
+		"build": "concurrently \"pnpm run-script build:css\" \"pnpm run-script build:js\" "
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@starfederation/datastar": "1.0.0-beta.11",
+		"@tailwindcss/forms": "^0.5.10",
+		"@tailwindcss/postcss": "^4.0.8",
+		"@tailwindcss/typography": "^0.5.16",
+		"autoprefixer": "^10.4.20",
+		"concurrently": "^9.1.2",
+		"cssnano": "^7.0.6",
+		"postcss": "^8.5.3",
+		"postcss-cli": "^11.0.0",
+		"postcss-import": "^16.1.0",
+		"rolldown": "1.0.0-beta.7",
+		"tailwindcss": "^4.0.8"
+	}
 }

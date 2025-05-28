@@ -3,6 +3,7 @@ namespace WeatherApp.templates.shared
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
+open WeatherApp.Models
 
 #nowarn "3391"
 
@@ -114,17 +115,12 @@ module layout =
                 meta (name = "viewport", content = "width=device-width, initial-scale=1.0")
                 base' (href = "/")
                 link (rel = "icon", type' = "image/png", href = "/favicon.png")
-                link (rel = "stylesheet", href = "/app.min.css")
-
-                script (
-                    type' = "module",
-                    src = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js",
-                    crossorigin = "anonymous"
-                )
-
-                script (src = "/app.min.js")
 
 #if DEBUG
+                link (rel = "stylesheet", href = $"/app.min.css?randomizer={reloadToken}")
+
+                script (type' = "module", src = $"/app.min.js?randomizer={reloadToken}")
+
                 raw
                     $$"""
                   <script type="module">
@@ -139,7 +135,7 @@ module layout =
                             }
                         }
 
-                        const pollingFunction = () => fetch('/pagereload/{{WeatherApp.Models.reloadToken}}');
+                        const pollingFunction = () => fetch('/pagereload/{{reloadToken}}');
 
                         // Change 100 to some number that depends on how long the project takes to compile
                         // Add 'delay: 5000' to options to control the polling frequency 
@@ -148,6 +144,9 @@ module layout =
                         poller.start();
                     </script>  
                   """
+#else
+                link (rel = "stylesheet", href = $"/app.min.css")
+                script (type' = "module", src = $"/app.min.js")
 #endif
             }
 

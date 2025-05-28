@@ -16,25 +16,27 @@ let html (ctx: HttpContext) =
                 hr (class' = "border-gray-200")
             }
 
-            div(class' = "w-3/4 lg:w-1/2 grid h-56 grid-cols-3 items-center place-items-center")
-                .data ("signals-counter", "0") {
+            div (
+                class' = "w-3/4 lg:w-1/2 grid h-56 grid-cols-3 items-center place-items-center",
+                dsSignals = [ ("counter", "0") ]
+            ) {
                 div (class' = "w-14") {
                     button (
                         class' =
                             "h-14 items-center justify-center text-white font-bold fond-heading bg-orange-500 w-full text-center border rounded-full border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200",
-                        dsOnClick = Post "/counter/decr"
+                        dsOnClick = SseRqst(SseOptions(DsPost, "/counter/decr"))
                     ) {
                         @"-"
                     }
                 }
 
-                div (class' = "self-center") { p(class' = "text-5xl").data ("text", "$counter") }
+                div (class' = "self-center") { p (class' = "text-5xl", dsText = "$counter") }
 
                 div (class' = "w-14") {
                     button (
                         class' =
                             "h-14 items-center justify-center text-white font-bold fond-heading bg-orange-500 w-full text-center border rounded-full border-orange-600 shadow hover:bg-orange-600 focus:ring focus:ring-orange-200 transition duration-200",
-                        dsOnClick = Post "/counter/incr"
+                        dsOnClick = SseRqst(SseOptions(DsPost, "/counter/incr"))
                     ) {
                         @"+"
                     }

@@ -3,6 +3,7 @@ module WeatherApp.templates.weather
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
 open WeatherApp.Models
+open Oxpecker.Datastar
 
 let data (forecasts: WeatherForecast[]) =
     Fragment() {
@@ -85,6 +86,8 @@ let html (ctx: HttpContext) =
                 hr (class' = "border-gray-200")
             }
 
-            p(id = "weather-data").data ("on-load", "@get('/weather/data')") { em () { "Loading..." } }
+            p (id = "weather-data", dsOnLoad = DsExec [ SseRqst(SseOptions(DsGet, "/weather/data")) ]) {
+                em () { "Loading..." }
+            }
         }
     }
