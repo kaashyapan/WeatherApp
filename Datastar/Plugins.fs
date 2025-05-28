@@ -126,6 +126,10 @@ module Plugins =
             with set (signalName: string, expression: DsExpression) =
                 this.DsOnEvt($"on-signal-change-{signalName}", expression)
 
+        /// <summary>Creates a signal and sets its value to true while an SSE request request is in flight, otherwise false. The signal can be used to show a loading indicator.</summary>
+        /// <remarks>This can be useful for show a loading spinner, disabling a button, etc.</remarks>
+        /// <param name="signalName">Signal name as string</param>
+        /// <returns>Oxpecker data attribute</returns>
         member this.dsIndicator
             with set (signalName: string) = this.data ($"indicator", signalName) |> ignore
 

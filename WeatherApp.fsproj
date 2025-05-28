@@ -8,8 +8,8 @@
 
     <ItemGroup>
         <Compile Include="Models.fs" />
-        <Compile Include="DatastarHelpers.fs" />
-        <Compile Include="DatastarAttrs.fs" />
+        <Compile Include="Datastar\Helpers.fs" />
+        <Compile Include="Datastar\Plugins.fs" />
         <Compile Include="templates\shared\layout.fs" />
         <Compile Include="templates\home.fs" />
         <Compile Include="templates\login.fs" />

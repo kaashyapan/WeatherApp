@@ -109,10 +109,34 @@ let html (r: LoginForm) (ctx: HttpContext) =
         div (class' = "p-2") {
             div (class' = "mb-10") {
                 h1 (class' = "text-5xl font-bold font-heading mb-6 max-w-2xl") { @"Login" }
-                p (class' = "text-lg mb-2 max-w-xl") { "Form post and errors" }
+                p (class' = "text-lg mb-2 max-w-xl") { "Form post and errors. See notes." }
                 hr (class' = "border-gray-200")
             }
 
             showForm r ctx
+
+            ol (class' = "py-4") {
+                li (class' = "text-sm text-gray-600 py-1") { "Initially load an Oxpecker html page/form" }
+
+                li (class' = "text-sm text-gray-600 py-1") {
+                    "Submitting a form will trigger a PATCH request to datastar and errors will be shown via datastar-merge-fragments"
+                }
+
+                li (class' = "text-sm text-gray-600 py-1") {
+                    "If form validation was successful datastar will trigger datastar-execute-script"
+                }
+
+                li (class' = "text-sm text-gray-600 py-1") {
+                    "The script will trigger a normal POST form data to Oxpecker. This can be used to set client auth credentials in cookies and redirect to a authenticated route"
+                }
+
+                li (class' = "text-sm text-gray-600 py-1") {
+                    "For forms that are not login forms, the data can be processed by datastar in one request(avoid a POST) and respond with a datastar-execute-script to initiate a redirect from client"
+                }
+
+                li (class' = "text-sm text-gray-600 py-1") {
+                    "The gap between the PATCH and POST is a potential vulnerability and can be addressed with another set of validations. The price to pay for SPA like form validation"
+                }
+            }
         }
     }

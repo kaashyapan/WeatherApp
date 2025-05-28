@@ -190,6 +190,27 @@ type Datastar(ctx: HttpContext) =
     member this.RemoveFragments(_selector, opts: RemoveFragmentsOptions) =
         ServerSentEventGenerator.RemoveFragments(_sse, _selector, opts)
 
+    /// <summary>Removes signals matching specific paths</summary>
+    /// <remarks>
+    /// <c>
+    /// event: datastar-remove-signals
+    /// data: paths foo.bar
+    /// data: paths baz
+    /// </c>
+    /// </remarks>
+    /// <param name="_paths">Signal path as string</param>
+    ///<returns>The concatenated string.</returns>
     member this.RemoveSignals(_paths) = ServerSentEventGenerator.RemoveSignals(_sse, _paths)
 
+    /// <summary>Removes signals matching specific paths</summary>
+    /// <remarks>
+    /// <c>
+    /// event: datastar-remove-signals
+    /// data: paths foo.bar
+    /// data: paths baz
+    /// </c>
+    /// </remarks>
+    /// <param name="_paths">Signal path as string</param>
+    /// <param name="opts">EventOptions</param>
+    ///<returns>The concatenated string.</returns>
     member this.RemoveSignals(_paths, opts: EventOptions) = ServerSentEventGenerator.RemoveSignals(_sse, _paths, opts)
