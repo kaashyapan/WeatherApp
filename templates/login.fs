@@ -15,7 +15,7 @@ let showForm (r: LoginForm) (ctx: HttpContext) =
 
     div (id = "login-form", class' = "w-full h-full") {
         div (class' = "w-3/4 lg:w-1/2 mx-auto bg-neutral-50 border border-neutral-50 rounded-xl") {
-            form(id = "login-form-id", class' = "p-4").data ("on-submit", "@post('/login', {contentType: 'form'})") {
+            form(id = "login-form-id", class' = "p-4").data ("on-submit", "@post('/signin', {contentType: 'form'})") {
                 h1 (class' = "text-3xl font-bold font-heading mb-4") { @"Signin" }
 
                 a (class' = "flex gap-4 inline-block text-gray-500 hover: transition duration-200 mb-8") {

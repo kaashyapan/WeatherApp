@@ -82,7 +82,7 @@ module layout =
                                 {|
                                     Class =
                                         "flex flex-wrap items-center p-3 text-neutral-50 hover:text-neutral-100 hover:bg-purple-900 rounded-lg"
-                                    Href = "/login"
+                                    Href = "/signin"
                                     Ctx = ctx
                                 |} {
                                 p (class' = "font-medium") { @"Login Form" }
@@ -123,6 +123,32 @@ module layout =
                 )
 
                 script (src = "/app.min.js")
+
+#if DEBUG
+                raw
+                    $$"""
+                  <script type="module">
+                        import Pollinator from 'https://cdn.jsdelivr.net/npm/pollinator@0.3.2/dist/index.module.js';
+
+                        const handlePoll = (response, status) => {
+                            if (response.status === 205) {
+                                console.log("Reloading page...");
+                                window.location.reload();
+                            } else {
+                               // console.log("Skip reload...");
+                            }
+                        }
+
+                        const pollingFunction = () => fetch('/pagereload/{{WeatherApp.Models.reloadToken}}');
+
+                        // Change 100 to some number that depends on how long the project takes to compile
+                        // Add 'delay: 5000' to options to control the polling frequency 
+                        const poller = new Pollinator(pollingFunction, { failRetryCount: 100 });
+                        poller.on(Pollinator.Event.POLL, handlePoll);
+                        poller.start();
+                    </script>  
+                  """
+#endif
             }
 
             body () { mainLayout ctx content }

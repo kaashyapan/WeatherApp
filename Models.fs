@@ -4,6 +4,10 @@ open System
 open System.Text.Json
 open System.Text.Json.Serialization
 
+#if DEBUG
+let reloadToken = string <| Guid.NewGuid()
+#endif
+
 type WeatherForecast =
     {
         Date: DateOnly

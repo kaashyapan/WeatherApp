@@ -21,6 +21,7 @@ open System.Threading
 open System.Threading.Tasks
 open System.Threading.Channels
 open IcedTasks
+open type Microsoft.AspNetCore.Http.TypedResults
 
 [<Literal>]
 let Message = "Hello world"
@@ -198,6 +199,10 @@ let weatherView' (ctx: HttpContext) =
     }
     :> Task
 
+#if DEBUG
+let reloadHandler' (id: string) = if id = WeatherApp.Models.reloadToken then %StatusCode(200) else %StatusCode(205)
+#endif
+
 let endpoints =
     [
         GET
@@ -205,6 +210,9 @@ let endpoints =
                 route "/" <| htmlView' home.html
                 route "/messages" <| messageView'
                 route "/error" <| htmlView' error.html
+#if DEBUG
+                routef "/pagereload/{%s}" <| reloadHandler'
+#endif
             ]
         subRoute
             "/counter"
@@ -213,7 +221,7 @@ let endpoints =
                 POST [ route "/incr" <| counterView' Incr; route "/decr" <| counterView' Decr ]
             ]
         subRoute
-            "/login"
+            "/signin"
             [
                 GET [ route "" <| htmlView' (login.html LoginForm.make) ]
                 POST [ route "" <| loginView' ]
