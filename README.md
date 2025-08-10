@@ -1,6 +1,6 @@
 ## Sample app to demonstrate Oxpecker web server with Datastar
 
-<img src="https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png" width="50"> + <img src="https://data-star.dev/static/images/rocket-304e710dde0b42b15673e10937623789adf72cae569c0e0defe7ec21c0bdf293.webp" width="50">
+<img src="https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png" width="50"> + <img src="https://data-star.dev/static/images/rocket-512x512.png" width="50">
 
 Setup tailwind
 

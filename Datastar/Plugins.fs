@@ -123,8 +123,11 @@ module Plugins =
             with set (expression: DsExpression) = this.DsOnEvt("on-raf", expression)
 
         member this.dsOnSignalChange
-            with set (signalName: string, expression: DsExpression) =
-                this.DsOnEvt($"on-signal-change-{signalName}", expression)
+            with set (listOfExpressions: (string * DsExpression) list) =
+                listOfExpressions
+                |> List.iter (fun (_signalName, _exp) ->
+                    this.DsOnEvt($"on-signal-change-{_signalName}", _exp) |> ignore
+                )
 
         /// <summary>Creates a signal and sets its value to true while an SSE request request is in flight, otherwise false. The signal can be used to show a loading indicator.</summary>
         /// <remarks>This can be useful for show a loading spinner, disabling a button, etc.</remarks>
@@ -177,7 +180,9 @@ module Plugins =
             with set (dsExpression: string) = this.data ("custom-validity", $"{dsExpression}") |> ignore
 
         member this.dsPersist
-            with set (signalExpression: string) = this.data ("persist", $"{signalExpression}") |> ignore
+            with set (signalNames: string list) =
+                let snames = signalNames |> String.concat " "
+                this.data ($"persist", snames) |> ignore
 
         member this.dsPersistSession
             with set (signalExpression: string) = this.data ("persist__session", $"{signalExpression}") |> ignore

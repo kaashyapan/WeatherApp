@@ -27,11 +27,7 @@ module layout =
                         }
 
                         a (class' = "inline-block w-min-24", href = "#") {
-                            img (
-                                src =
-                                    "https://data-star.dev/static/images/rocket-304e710dde0b42b15673e10937623789adf72cae569c0e0defe7ec21c0bdf293.webp",
-                                class' = "w-24"
-                            )
+                            img (src = "https://data-star.dev/static/images/rocket-512x512.png", class' = "w-24")
                         }
 
                     }
